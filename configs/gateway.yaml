@@ -1,0 +1,11 @@
+orderservice:
+  path: /orders
+  method: GET
+  service: orderservice
+  controller: cmd/orderservice/main.go
+
+userservice:
+  path: /users
+  method: GET
+  service: userservice
+  controller: cmd/userservice/main.go
