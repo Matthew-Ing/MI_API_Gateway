@@ -1,13 +1,9 @@
-listen: ":8088"
+listen: ":8080"
 upstreams:
   users:
-    # url: "http://userservice:8081"
-    # local test
-    url: "http://localhost:8081"
+    url: "http://userservice:8081"
   orders:
-    # url: "http://orderservice:8082"
-    # local test
-    url: "http://localhost:8082"
+    url: "http://orderservice:8082"
 routes:
   - path: "/users"
     upstream: users
