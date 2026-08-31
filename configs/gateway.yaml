@@ -1,11 +1,15 @@
-orderservice:
-  path: /orders
-  method: GET
-  service: orderservice
-  controller: cmd/orderservice/main.go
-
-userservice:
-  path: /users
-  method: GET
-  service: userservice
-  controller: cmd/userservice/main.go
+listen: ":8088"
+upstreams:
+  users:
+    # url: "http://userservice:8081"
+    # local test
+    url: "http://localhost:8081"
+  orders:
+    # url: "http://orderservice:8082"
+    # local test
+    url: "http://localhost:8082"
+routes:
+  - path: "/users"
+    upstream: users
+  - path: "/orders"
+    upstream: orders
