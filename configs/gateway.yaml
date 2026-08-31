@@ -1,4 +1,4 @@
-listen: ":8080"
+listen: ":8088"
 upstreams:
   users:
     url: "http://userservice:8081"
