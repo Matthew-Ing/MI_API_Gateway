@@ -1,0 +1,4 @@
+services:
+  userservice:
+  orderservice:
+  gateway:

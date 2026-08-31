@@ -1,0 +1,55 @@
+package main
+
+import (
+	"encoding/json"
+	"log"
+	"net/http"
+	"strconv"
+)
+
+type User struct {
+	ID    int    `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
+func main() {
+	mux := http.NewServeMux()
+	log.Println("User Service is running on port 8081")
+	mux.HandleFunc("GET /healthz", healthCheck)
+	mux.HandleFunc("GET /users", listUsers)
+	mux.HandleFunc("GET /users/{id}", getUserByID)
+
+	log.Println("User Service is running on port 8081")
+	log.Fatal(http.ListenAndServe(":8081", mux))
+}
+func healthCheck(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("User Service is running"))
+}
+func listUsers(w http.ResponseWriter, r *http.Request) {
+	users := []User{
+		{ID: 1, Name: "John Doe"},
+		{ID: 2, Name: "Jane Doe"},
+	}
+	w.Header().Set("Content-Type", "application/json")
+
+	json.NewEncoder(w).Encode(users)
+
+}
+func getUserByID(w http.ResponseWriter, r *http.Request) {
+	user := []User{{ID: 1, Name: "John Doe", Email: "john.doe@example.com"},
+		{ID: 2, Name: "Jane Doe", Email: "jane.doe@example.com"}}
+	userID, _ := strconv.Atoi(r.PathValue("id"))
+	for _, user := range user {
+		if user.ID == userID {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(user)
+			return
+		}
+	}
+	w.WriteHeader(http.StatusNotFound)
+	w.Write([]byte("User not found"))
+
+}
