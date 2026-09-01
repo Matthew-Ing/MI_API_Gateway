@@ -12,6 +12,7 @@ import (
 	"github.com/Matthew-Ing/apigateway/internal/config"
 	"github.com/Matthew-Ing/apigateway/internal/middleware"
 	"github.com/Matthew-Ing/apigateway/internal/proxy"
+	"github.com/Matthew-Ing/apigateway/internal/ratelimit"
 )
 
 func main() {
@@ -39,6 +40,7 @@ func main() {
 		middleware.RequestLogger,
 		middleware.RecoverPanic,
 		internalauth.New(rdb),
+		ratelimit.New(rdb),
 	)(proxy.New(cfg))
 
 	mux := http.NewServeMux()

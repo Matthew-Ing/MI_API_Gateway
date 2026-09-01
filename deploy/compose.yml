@@ -39,3 +39,5 @@ services:
     environment:
       - JWT_SECRET=secret
       - REDIS_ADDR=redis:6379
+      - RATE_LIMIT_MAX=10
+      - RATE_LIMIT_WINDOW_SEC=60
