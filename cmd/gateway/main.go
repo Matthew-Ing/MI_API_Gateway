@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/redis/go-redis/v9"
 
 	internalauth "github.com/Matthew-Ing/apigateway/internal/auth"
 	"github.com/Matthew-Ing/apigateway/internal/config"
@@ -14,28 +17,34 @@ import (
 func main() {
 	cfg, err := config.LoadConfig("configs/gateway.yaml")
 	if err != nil {
-		log.Fatalf("Failed to load config: %v", err)
+		log.Fatal(err)
 	}
-	m := middleware.Chain(
+	addr := os.Getenv("REDIS_ADDR")
+	if addr == "" {
+		log.Fatal("REDIS_ADDR is not set")
+	}
+
+	rdb := redis.NewClient(&redis.Options{Addr: addr})
+
+	if err := rdb.Ping(context.Background()).Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	if os.Getenv("JWT_SECRET") == "" {
+		log.Fatal("JWT_SECRET is not set")
+	}
+
+	h := middleware.Chain(
 		middleware.RequestID,
 		middleware.RequestLogger,
 		middleware.RecoverPanic,
-		internalauth.JWT,
-	)
+		internalauth.New(rdb),
+	)(proxy.New(cfg))
 
-	p := proxy.New(cfg)
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("status ok"))
 	})
-	mux.Handle("/", m(p))
-
-	log.Println("Gateway is running on", cfg.Listen)
-	log.Println("JWT_SECRET is", os.Getenv("JWT_SECRET"))
-	genToken, err := internalauth.GenerateToken("123")
-	if err != nil {
-		log.Fatalf("Failed to generate token: %v", err)
-	}
-	log.Println("Generated token:", genToken)
+	mux.Handle("/", h)
 	log.Fatal(http.ListenAndServe(cfg.Listen, mux))
 }

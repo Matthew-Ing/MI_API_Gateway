@@ -1,4 +1,11 @@
+
 services:
+
+  redis:
+    image: redis:7-alpine
+    expose:
+      - "6379"
+
   userservice:
     build:
       context: ..
@@ -28,5 +35,7 @@ services:
     depends_on:
       - userservice
       - orderservice
+      - redis
     environment:
       - JWT_SECRET=secret
+      - REDIS_ADDR=redis:6379
