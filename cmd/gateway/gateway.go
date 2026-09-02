@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/redis/go-redis/v9"
 
+	admin "github.com/Matthew-Ing/MI_API_Gateway/internal/admin"
 	internalauth "github.com/Matthew-Ing/MI_API_Gateway/internal/auth"
 	circuitbreaker "github.com/Matthew-Ing/MI_API_Gateway/internal/circuitbreaker"
 	"github.com/Matthew-Ing/MI_API_Gateway/internal/config"
@@ -17,7 +18,6 @@ import (
 	"github.com/Matthew-Ing/MI_API_Gateway/internal/proxy"
 	"github.com/Matthew-Ing/MI_API_Gateway/internal/ratelimit"
 	"github.com/Matthew-Ing/MI_API_Gateway/internal/tracing"
-	admin "github.com/Matthew-Ing/MI_API_Gateway/internal/admin"
 )
 
 func main() {
@@ -44,11 +44,11 @@ func main() {
 		log.Fatal("ADMIN_JWT_SECRET or ADMIN_PASSWORD is not set")
 	}
 	ctx := context.Background()
-shutdown, err := tracing.Init(ctx, "gateway")
-if err != nil {
-	log.Fatal(err)
-}
-defer shutdown(ctx)
+	shutdown, err := tracing.Init(ctx, "gateway")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() { _ = shutdown(ctx) }()
 
 	cb := circuitbreaker.NewRegistry(10, 10*time.Second)
 	adm := admin.New(rdb, cfg, cb)
@@ -65,9 +65,8 @@ defer shutdown(ctx)
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.Handler())
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("status ok"))
+		_, _ = w.Write([]byte("status ok"))
 	})
-
 
 	mux.HandleFunc("POST /admin/login", adm.Login)
 	mux.Handle("POST /admin/keys", internalauth.AdminAuth(http.HandlerFunc(adm.CreateKey)))

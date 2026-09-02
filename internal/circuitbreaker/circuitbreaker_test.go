@@ -49,7 +49,9 @@ func TestHalfOpenOneProbe(t *testing.T) {
 
 func TestRegistrySameInstance(t *testing.T) {
 	r := NewRegistry(5, time.Second)
-	if r.For("orders") != r.For("orders") {
+	a := r.For("orders")
+	b := r.For("orders")
+	if a != b {
 		t.Fatal("expected same breaker")
 	}
 }

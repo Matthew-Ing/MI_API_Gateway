@@ -26,19 +26,19 @@ func main() {
 	mux.HandleFunc("GET /orders/{id}", getOrderByID)
 	log.Println("Order Service is running on port 8082")
 	ctx := context.Background()
-shutdown, err := tracing.Init(ctx, "orderservice")
-if err != nil {
-	log.Fatal(err)
-}
-defer shutdown(ctx)
+	shutdown, err := tracing.Init(ctx, "orderservice")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() { _ = shutdown(ctx) }()
 
-handler := otelhttp.NewHandler(mux, "orderservice")
-log.Fatal(http.ListenAndServe(":8082", handler))
+	handler := otelhttp.NewHandler(mux, "orderservice")
+	log.Fatal(http.ListenAndServe(":8082", handler))
 }
 func healthCheck(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Order Service is running"))
+	_, _ = w.Write([]byte("Order Service is running"))
 }
 func listOrders(w http.ResponseWriter, r *http.Request) {
 	if maybeFail(w) {
@@ -49,7 +49,7 @@ func listOrders(w http.ResponseWriter, r *http.Request) {
 		{ID: 2, Name: "Order 2"},
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(orders)
+	_ = json.NewEncoder(w).Encode(orders)
 }
 func getOrderByID(w http.ResponseWriter, r *http.Request) {
 	if maybeFail(w) {
@@ -63,12 +63,12 @@ func getOrderByID(w http.ResponseWriter, r *http.Request) {
 	for _, order := range orders {
 		if order.ID == orderID {
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(order)
+			_ = json.NewEncoder(w).Encode(order)
 			return
 		}
 	}
 	w.WriteHeader(http.StatusNotFound)
-	w.Write([]byte("Order not found"))
+	_, _ = w.Write([]byte("Order not found"))
 }
 
 func maybeFail(w http.ResponseWriter) bool {

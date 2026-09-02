@@ -26,19 +26,19 @@ func main() {
 
 	log.Println("User Service is running on port 8081")
 	ctx := context.Background()
-shutdown, err := tracing.Init(ctx, "userservice")
-if err != nil {
-	log.Fatal(err)
-}
-defer shutdown(ctx)
+	shutdown, err := tracing.Init(ctx, "userservice")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() { _ = shutdown(ctx) }()
 
-handler := otelhttp.NewHandler(mux, "userservice")
-log.Fatal(http.ListenAndServe(":8081", handler))
+	handler := otelhttp.NewHandler(mux, "userservice")
+	log.Fatal(http.ListenAndServe(":8081", handler))
 }
 func healthCheck(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("User Service is running"))
+	_, _ = w.Write([]byte("User Service is running"))
 }
 func listUsers(w http.ResponseWriter, r *http.Request) {
 	users := []User{
@@ -47,7 +47,7 @@ func listUsers(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 
-	json.NewEncoder(w).Encode(users)
+	_ = json.NewEncoder(w).Encode(users)
 
 }
 func getUserByID(w http.ResponseWriter, r *http.Request) {
@@ -57,11 +57,11 @@ func getUserByID(w http.ResponseWriter, r *http.Request) {
 	for _, user := range user {
 		if user.ID == userID {
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(user)
+			_ = json.NewEncoder(w).Encode(user)
 			return
 		}
 	}
 	w.WriteHeader(http.StatusNotFound)
-	w.Write([]byte("User not found"))
+	_, _ = w.Write([]byte("User not found"))
 
 }

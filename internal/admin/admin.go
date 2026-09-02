@@ -55,7 +55,7 @@ func (s *Server) Login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
-	json.NewEncoder(w).Encode(map[string]string{"token": tok})
+	_ = json.NewEncoder(w).Encode(map[string]string{"token": tok})
 }
 
 func (s *Server) CreateKey(w http.ResponseWriter, r *http.Request) {
@@ -70,7 +70,7 @@ func (s *Server) CreateKey(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
-	json.NewEncoder(w).Encode(map[string]string{"key": raw, "hash": hash})
+	_ = json.NewEncoder(w).Encode(map[string]string{"key": raw, "hash": hash})
 }
 
 func (s *Server) RevokeKey(w http.ResponseWriter, r *http.Request) {
@@ -97,7 +97,7 @@ func (s *Server) Health(w http.ResponseWriter, r *http.Request) {
 		resp, err := client.Get(u.URL + "/healthz")
 		if err == nil {
 			ok = resp.StatusCode < 500
-			resp.Body.Close()
+			_ = resp.Body.Close()
 		}
 		out = append(out, up{
 			Name:    name,
@@ -106,5 +106,5 @@ func (s *Server) Health(w http.ResponseWriter, r *http.Request) {
 			Breaker: s.cb.For(name).Current().String(),
 		})
 	}
-	json.NewEncoder(w).Encode(out)
+	_ = json.NewEncoder(w).Encode(out)
 }
