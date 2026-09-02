@@ -78,6 +78,17 @@ func (b *Breaker) Current() State {
 	return b.state
 }
 
+func (s State) String() string {
+	switch s {
+	case StateOpen:
+		return "open"
+	case StateHalfOpen:
+		return "half-open"
+	default:
+		return "closed"
+	}
+}
+
 type Registry struct {
 	mu       sync.Mutex
 	breakers map[string]*Breaker

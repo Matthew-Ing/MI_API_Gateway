@@ -79,3 +79,5 @@ services:
       - RATE_LIMIT_WINDOW_SEC=60
       - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
       - SAMPLE_API_KEY=demo-key
+      - ADMIN_JWT_SECRET=admin-secret
+      - ADMIN_PASSWORD=admin
