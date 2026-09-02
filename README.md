@@ -1,4 +1,4 @@
-# MI API Gateway
+# API Gateway
 
 A Go reverse proxy in front of two mock services. nginx terminates TLS at the edge; the gateway applies auth (JWT or API key), Redis rate limiting, and a per-upstream circuit breaker, then proxies with `httputil.ReverseProxy`. Routing is YAML, not a framework mux per backend.
 
