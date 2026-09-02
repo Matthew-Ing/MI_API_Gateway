@@ -81,3 +81,13 @@ services:
       - SAMPLE_API_KEY=demo-key
       - ADMIN_JWT_SECRET=admin-secret
       - ADMIN_PASSWORD=admin
+
+  nginx:
+    build:
+      context: ..
+      dockerfile: nginx/Dockerfile
+    ports:
+      - "8085:80"
+      - "8443:443"
+    depends_on:
+      - gateway
