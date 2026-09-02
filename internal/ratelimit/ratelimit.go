@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
+	"github.com/Matthew-Ing/MI_API_Gateway/internal/metrics"
 )
 
 type RateLimit struct {
@@ -61,6 +62,7 @@ func (rl *RateLimit) Handler(next http.Handler) http.Handler {
 			_ = rl.rdb.Expire(r.Context(), key, rl.window).Err()
 		}
 		if n > rl.max {
+			metrics.RateLimited.Inc()
 			w.Header().Set("Retry-After", strconv.Itoa(int(rl.window.Seconds())))
 			http.Error(w, "Too Many Requests", http.StatusTooManyRequests) // 429
 			return

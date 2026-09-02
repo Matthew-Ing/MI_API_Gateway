@@ -1,10 +1,14 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/Matthew-Ing/MI_API_Gateway/internal/tracing"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 type User struct {
@@ -21,7 +25,15 @@ func main() {
 	mux.HandleFunc("GET /users/{id}", getUserByID)
 
 	log.Println("User Service is running on port 8081")
-	log.Fatal(http.ListenAndServe(":8081", mux))
+	ctx := context.Background()
+shutdown, err := tracing.Init(ctx, "userservice")
+if err != nil {
+	log.Fatal(err)
+}
+defer shutdown(ctx)
+
+handler := otelhttp.NewHandler(mux, "userservice")
+log.Fatal(http.ListenAndServe(":8081", handler))
 }
 func healthCheck(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")

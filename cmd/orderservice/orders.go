@@ -1,10 +1,16 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"log"
+	"math/rand/v2"
 	"net/http"
+	"os"
 	"strconv"
+
+	"github.com/Matthew-Ing/MI_API_Gateway/internal/tracing"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 type Order struct {
@@ -19,7 +25,15 @@ func main() {
 	mux.HandleFunc("GET /orders", listOrders)
 	mux.HandleFunc("GET /orders/{id}", getOrderByID)
 	log.Println("Order Service is running on port 8082")
-	log.Fatal(http.ListenAndServe(":8082", mux))
+	ctx := context.Background()
+shutdown, err := tracing.Init(ctx, "orderservice")
+if err != nil {
+	log.Fatal(err)
+}
+defer shutdown(ctx)
+
+handler := otelhttp.NewHandler(mux, "orderservice")
+log.Fatal(http.ListenAndServe(":8082", handler))
 }
 func healthCheck(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -27,6 +41,9 @@ func healthCheck(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Order Service is running"))
 }
 func listOrders(w http.ResponseWriter, r *http.Request) {
+	if maybeFail(w) {
+		return
+	}
 	orders := []Order{
 		{ID: 1, Name: "Order 1"},
 		{ID: 2, Name: "Order 2"},
@@ -35,6 +52,9 @@ func listOrders(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(orders)
 }
 func getOrderByID(w http.ResponseWriter, r *http.Request) {
+	if maybeFail(w) {
+		return
+	}
 	orders := []Order{
 		{ID: 1, Name: "Order 1"},
 		{ID: 2, Name: "Order 2"},
@@ -49,4 +69,20 @@ func getOrderByID(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusNotFound)
 	w.Write([]byte("Order not found"))
+}
+
+func maybeFail(w http.ResponseWriter) bool {
+	s := os.Getenv("FAIL_RATE")
+	if s == "" {
+		return false
+	}
+	rate, err := strconv.ParseFloat(s, 64)
+	if err != nil || rate <= 0 {
+		return false
+	}
+	if rand.Float64() < rate {
+		http.Error(w, "injected failure", http.StatusInternalServerError)
+		return true
+	}
+	return false
 }

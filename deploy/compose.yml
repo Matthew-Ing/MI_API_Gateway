@@ -5,6 +5,35 @@ services:
     image: redis:7-alpine
     expose:
       - "6379"
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "4318:4318"
+  
+  prometheus:
+    image: prom/prometheus:v2.54.0
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      - gateway
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+    volumes:
+      - ./prometheus/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      - ./prometheus/grafana-dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - ./prometheus/grafana-dashboard.json:/var/lib/grafana/dashboards/gateway.json:ro
+    depends_on:
+      - prometheus
 
   userservice:
     build:
@@ -14,6 +43,9 @@ services:
         CMD: userservice
     expose:
       - "8081"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
+
 
   orderservice:
     build:
@@ -23,6 +55,9 @@ services:
         CMD: orderservice
     expose:
       - "8082"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
+      - FAIL_RATE=0.8
 
   gateway:
     build:
@@ -36,8 +71,11 @@ services:
       - userservice
       - orderservice
       - redis
+      - jaeger
     environment:
       - JWT_SECRET=secret
       - REDIS_ADDR=redis:6379
-      - RATE_LIMIT_MAX=10
+      - RATE_LIMIT_MAX=100
       - RATE_LIMIT_WINDOW_SEC=60
+      - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
+      - SAMPLE_API_KEY=demo-key

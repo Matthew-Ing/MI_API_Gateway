@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 type Middleware func(http.Handler) http.Handler
@@ -48,4 +49,8 @@ func RequestLogger(next http.Handler) http.Handler {
 		fmt.Println("Request logger middleware")
 		next.ServeHTTP(w, r)
 	})
+	
+}
+func Tracing(next http.Handler) http.Handler {
+	return otelhttp.NewHandler(next, "gateway")
 }

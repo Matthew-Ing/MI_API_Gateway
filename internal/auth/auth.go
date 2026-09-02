@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"context"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/redis/go-redis/v9"
@@ -24,6 +25,20 @@ func GenerateToken(userID string) (string, error) {
 		"userID": userID,
 	})
 	return token.SignedString([]byte(secret))
+}
+
+func SeedSampleKey(ctx context.Context, rdb *redis.Client) string {
+	raw := os.Getenv("SAMPLE_API_KEY")
+	if raw == "" {
+		raw = "demo-key"
+	}
+	sum := sha256.Sum256([]byte(raw))
+	redisKey := "apikey:" + hex.EncodeToString(sum[:])
+	if err := rdb.Set(ctx, redisKey, "1", 0).Err(); err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("sample API key: %s  (header X-API-Key)", raw)
+	return raw
 }
 
 func New(rdb *redis.Client) func(http.Handler) http.Handler {

@@ -1,0 +1,43 @@
+{
+    "title": "API Gateway",
+    "uid": "gateway",
+    "schemaVersion": 38,
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "type": "timeseries",
+        "title": "Request rate",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "targets": [{ "expr": "sum by (method, code) (rate(gateway_http_requests_total[1m]))", "legendFormat": "{{method}} {{code}}" }]
+      },
+      {
+        "id": 2,
+        "type": "timeseries",
+        "title": "Latency",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "targets": [{ "expr": "histogram_quantile(0.95, sum by (le) (rate(gateway_http_request_duration_seconds_bucket[1m])))", "legendFormat": "p95" }]
+      },
+      {
+        "id": 3,
+        "type": "timeseries",
+        "title": "Rate limited",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "targets": [{ "expr": "rate(gateway_rate_limited_total[1m])", "legendFormat": "429/s" }]
+      },
+      {
+        "id": 4,
+        "type": "timeseries",
+        "title": "Circuit breaker",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "targets": [
+          { "expr": "gateway_circuit_state", "legendFormat": "{{upstream}} state" },
+          { "expr": "rate(gateway_circuit_open_total[1m])", "legendFormat": "{{upstream}} rejects/s" }
+        ]
+      }
+    ]
+  }
